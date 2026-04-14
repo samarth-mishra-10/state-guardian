@@ -105,9 +105,17 @@
       0deg,
       transparent,
       transparent 2px,
-      hsl(199 89% 48% / 0.03) 2px,
-      hsl(199 89% 48% / 0.03) 4px
+      hsl(199 89% 48% / 0.05) 2px,
+      hsl(199 89% 48% / 0.05) 4px
     );
+  }
+
+  .futuristic-grid {
+    background-size: 40px 40px;
+    background-image: 
+      linear-gradient(to right, hsl(199 89% 48% / 0.1) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(199 89% 48% / 0.1) 1px, transparent 1px);
+    mask-image: radial-gradient(ellipse at center, black 40%, transparent 80%);
   }
 
   .glow-pulse {
