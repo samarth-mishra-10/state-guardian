@@ -5,7 +5,7 @@ from typing import Dict, Optional, List
 import pandas as pd
 import json
 import os
-from .model_training import simulate_policy
+from .model_training import normalize_state_name, simulate_policy
 
 app = FastAPI(title="India Crime & Policy Analytics API")
 
@@ -82,7 +82,8 @@ def get_safety_profile(request: SafetyProfileRequest):
     data_path = os.path.join(ROOT_DIR, 'backend', 'processed_master.csv')
     df = pd.read_csv(data_path)
     
-    state_data = df[df['State'] == request.state.upper()]
+    df["State_Normalized"] = df["State"].apply(normalize_state_name)
+    state_data = df[df['State_Normalized'] == normalize_state_name(request.state)]
     if state_data.empty:
         raise HTTPException(status_code=404, detail="State not found in baseline")
         

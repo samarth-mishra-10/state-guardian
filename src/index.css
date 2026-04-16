@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
 
 @layer base {
   :root {
@@ -135,4 +135,51 @@
 
 .animate-fade-in-up {
   animation: fade-in-up 0.5s ease-out;
+}
+
+.policy-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      to right,
+      rgba(251, 191, 36, 0.28) 0%,
+      rgba(251, 191, 36, 0.16) 49.5%,
+      rgba(56, 189, 248, 0.16) 50.5%,
+      rgba(59, 130, 246, 0.28) 100%
+    );
+  outline: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.policy-slider:hover {
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.08);
+}
+
+.policy-slider:focus-visible {
+  box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.14);
+}
+
+.policy-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f8fafc 0%, #bfdbfe 100%);
+  border: 2px solid #2563eb;
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+  cursor: pointer;
+}
+
+.policy-slider::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #f8fafc 0%, #bfdbfe 100%);
+  border: 2px solid #2563eb;
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
+  cursor: pointer;
 }

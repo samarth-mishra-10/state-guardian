@@ -10,6 +10,18 @@ from sklearn.metrics import r2_score
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
+def normalize_state_name(name: str) -> str:
+    if not isinstance(name, str):
+        return ""
+
+    normalized = name.strip().upper().replace("&", "AND")
+    normalized = " ".join(normalized.split())
+    aliases = {
+        "NCT OF DELHI": "DELHI",
+        "ORISSA": "ODISHA",
+    }
+    return aliases.get(normalized, normalized)
+
 def train_model():
     data_path = os.path.join(ROOT_DIR, 'backend', 'processed_master.csv')
     if not os.path.exists(data_path):
@@ -88,6 +100,7 @@ def simulate_policy(state: str, lever_changes: dict, target_year: int = 2014):
         return {"error": "Data or model not found"}
         
     df = pd.read_csv(data_path)
+    df["State_Normalized"] = df["State"].apply(normalize_state_name)
     model = joblib.load(model_path)
     
     features = [
@@ -96,9 +109,17 @@ def simulate_policy(state: str, lever_changes: dict, target_year: int = 2014):
     ]
     targets = ['Total_IPC_Crimes', 'Crimes_Against_Women', 'Property_Stolen']
     
-    state_df = df[(df['State'] == state) & (df['Year'] == df['Year'].max())]
-    if state_df.empty: baseline = df[features].mean().to_dict()
-    else: baseline = state_df[features].iloc[0].to_dict()
+    selected_state = normalize_state_name(state)
+    latest_year = df["Year"].max()
+    state_df = df[(df['State_Normalized'] == selected_state) & (df['Year'] == latest_year)]
+    if state_df.empty:
+        state_history = df[df['State_Normalized'] == selected_state]
+        if not state_history.empty:
+            baseline = state_history.sort_values("Year", ascending=False)[features].iloc[0].to_dict()
+        else:
+            baseline = df[features].mean().to_dict()
+    else:
+        baseline = state_df[features].iloc[0].to_dict()
         
     simulated_features = baseline.copy()
     

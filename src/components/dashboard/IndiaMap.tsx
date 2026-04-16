@@ -10,18 +10,18 @@ interface IndiaMapProps {
 }
 
 const IndiaMap = ({ selectedState, onSelectState }: IndiaMapProps) => {
-  
+  const [hoveredState, setHoveredState] = React.useState('');
+
   const normalizeForMatch = (name: string) => {
     if (!name) return "";
-    let clean = name.toUpperCase().replace(/&/g, 'AND');
+    const clean = name.toUpperCase().replace(/&/g, 'AND');
     if (clean.includes('ANDAMAN')) return 'ANDAMAN AND NICOBAR ISLANDS';
     if (clean.includes('DELHI')) return 'DELHI';
     return clean;
   };
 
   return (
-    // Uses absolute positioning to perfectly fill the parent without triggering layout shifts
-    <div className="absolute inset-0 flex items-center justify-center bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
+    <div className="relative flex h-full items-center justify-center overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{ scale: 1000, center: [80, 22] }}
@@ -45,6 +45,8 @@ const IndiaMap = ({ selectedState, onSelectState }: IndiaMapProps) => {
                   key={geo.rsmKey}
                   geography={geo}
                   onClick={() => onSelectState(stateName)}
+                  onMouseEnter={() => setHoveredState(stateName)}
+                  onMouseLeave={() => setHoveredState('')}
                   style={{
                     default: {
                       fill: isSelected ? "#3b82f6" : "#1e293b",
@@ -53,7 +55,7 @@ const IndiaMap = ({ selectedState, onSelectState }: IndiaMapProps) => {
                       outline: "none",
                     },
                     hover: {
-                      fill: "#60a5fa",
+                      fill: isSelected ? "#3b82f6" : "#60a5fa",
                       stroke: "#0f172a",
                       strokeWidth: 1,
                       outline: "none",
@@ -70,6 +72,9 @@ const IndiaMap = ({ selectedState, onSelectState }: IndiaMapProps) => {
           }}
         </Geographies>
       </ComposableMap>
+      <div className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-slate-900/90 px-2 py-1 text-xs text-slate-200">
+        {hoveredState || selectedState}
+      </div>
     </div>
   );
 };

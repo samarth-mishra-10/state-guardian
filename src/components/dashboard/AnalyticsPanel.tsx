@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingDown, TrendingUp, AlertCircle, BookOpen } from 'lucide-react';
+import { Lightbulb, TrendingDown, TrendingUp } from 'lucide-react';
 import { SimulationResults } from '../../App';
 
 interface AnalyticsPanelProps {
@@ -10,11 +10,12 @@ interface AnalyticsPanelProps {
 }
 
 export default function AnalyticsPanel({ state, results, loading }: AnalyticsPanelProps) {
-  
   if (!results && !loading) return <div className="p-6 text-slate-400">Run a simulation to see impact.</div>;
   if (loading) return <div className="p-6 text-slate-400 animate-pulse">Calculating causal impacts...</div>;
 
   const { base_predicted_crimes, predicted_crimes } = results!;
+  const totalBase = base_predicted_crimes.Total_IPC_Crimes;
+  const totalSim = predicted_crimes.Total_IPC_Crimes;
 
   const formatNumber = (num: number) => Math.round(num).toLocaleString();
 
@@ -24,6 +25,34 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
     const isIncrease = diff > 0;
     return { diff, pct, isIncrease };
   };
+
+  const stateLabel = state
+    .toLowerCase()
+    .split(' ')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+  const topLevers = Object.entries(results!.simulated_features)
+    .filter(([key]) => key !== 'Year')
+    .map(([key, value]) => {
+      const baseValue = results!.baseline_features[key];
+      const delta = baseValue ? ((value - baseValue) / baseValue) * 100 : 0;
+      return { key, delta };
+    })
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, 2);
+
+  const insights = [
+    `${stateLabel} projects ${Math.abs(getDelta(totalBase, totalSim).pct).toFixed(1)}% ${
+      getDelta(totalBase, totalSim).isIncrease ? 'higher' : 'lower'
+    } total IPC crime under this scenario.`,
+    topLevers.length
+      ? `Largest policy shift: ${topLevers
+          .map(({ key, delta }) => `${key.replaceAll('_', ' ')} (${delta >= 0 ? '+' : ''}${delta.toFixed(0)}%)`)
+          .join(', ')}.`
+      : 'No major lever changes detected. Adjust a slider to generate targeted recommendations.',
+    'Compare women and property trends together before finalizing decisions to avoid one-metric optimization.',
+  ];
 
   const chartData = [
     {
@@ -49,7 +78,7 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
     const { diff, pct, isIncrease } = getDelta(base, sim);
 
     return (
-      <div className="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+      <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-4">
         <h4 className="text-sm text-slate-400 mb-1">{title}</h4>
         <div className="text-2xl font-bold font-mono text-slate-100">{formatNumber(sim)}</div>
         <div className={`flex items-center gap-1 text-sm mt-2 ${isIncrease ? 'text-red-400' : 'text-emerald-400'}`}>
@@ -61,24 +90,24 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
   };
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex justify-between items-end mb-6">
+    <div className="flex h-full flex-col">
+      <div className="mb-5 flex justify-between">
         <div>
           <h2 className="text-xl font-bold">Impact Analytics</h2>
-          <p className="text-sm text-slate-400">Region: <span className="text-blue-400 font-semibold">{state}</span></p>
+          <p className="text-sm text-slate-400">
+            Region: <span className="font-semibold text-blue-400">{stateLabel}</span>
+          </p>
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <MetricCard title="Total IPC Crimes" keyName="Total_IPC_Crimes" />
         <MetricCard title="Crimes Against Women" keyName="Crimes_Against_Women" />
         <MetricCard title="Property Stolen" keyName="Property_Stolen" />
       </div>
 
-      {/* Chart */}
-      <div className="flex-1 min-h-[300px] mb-8">
-        <h3 className="text-sm font-medium text-slate-400 mb-4">Baseline vs. Policy Simulation</h3>
+      <div className="mb-6 h-[280px] md:h-[320px]">
+        <h3 className="mb-3 text-sm font-medium text-slate-400">Baseline vs. Policy Simulation</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -95,15 +124,15 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
         </ResponsiveContainer>
       </div>
 
-      {/* Methodology Section (For Capstone Defense) */}
-      <div className="bg-slate-900 border border-slate-700 p-4 rounded-lg mt-auto">
-        <div className="flex items-center gap-2 mb-2 text-blue-400">
-          <BookOpen className="h-4 w-4" />
-          <h4 className="font-semibold text-sm">Causal Methodology</h4>
+      <div className="mt-auto rounded-lg border border-slate-700 bg-slate-900 p-4">
+        <div className="mb-2 flex items-center gap-2 text-blue-300">
+          <Lightbulb className="h-4 w-4" />
+          <h4 className="text-sm font-semibold">Scenario Insights</h4>
         </div>
-        <ul className="text-xs text-slate-400 space-y-2 list-disc pl-4">
-          <li><strong>Algorithm:</strong> Multi-Output XGBoost Regressor (Time-Series Split). R² = 0.6520.</li>
-          <li><strong>Logic Constraints:</strong> Monotonic constraints applied to prevent endogeneity (Reverse Causality). The model strictly enforces that increasing enforcement decreases/holds crime steady.</li>
+        <ul className="list-disc space-y-2 pl-4 text-xs text-slate-300">
+          {insights.map((insight) => (
+            <li key={insight}>{insight}</li>
+          ))}
         </ul>
       </div>
     </div>
