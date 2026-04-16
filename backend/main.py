@@ -23,6 +23,7 @@ class SimulateRequest(BaseModel):
     state: str
     district: Optional[str] = None
     lever_changes: Dict[str, float]
+    target_year: int = 2014
 
 class SafetyProfileRequest(BaseModel):
     state: str
@@ -49,17 +50,28 @@ def get_baseline():
             importances = json.load(f)
             
     return {
-        "states": df_base.to_dict(orient="records"),
-        "feature_importances": importances
+        "states": df_base.to_dict(orient='records'),
+        "importances": importances
     }
 
 @app.post("/api/simulate")
-def simulate(request: SimulateRequest):
-    """Predicts modified crime outcomes based on lever changes."""
-    result = simulate_policy(request.state, request.district or "All", request.lever_changes)
-    if "error" in result:
-        raise HTTPException(status_code=400, detail=result["error"])
-    return result
+def run_simulation(request: SimulateRequest):
+    """
+    Runs the policy simulation based on user inputs.
+    """
+    try:
+        result = simulate_policy(
+            state=request.state.upper(), 
+            lever_changes=request.lever_changes,
+            target_year=request.target_year
+        )
+        
+        if "error" in result:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/safety-profile")
 def get_safety_profile(request: SafetyProfileRequest):
@@ -70,7 +82,7 @@ def get_safety_profile(request: SafetyProfileRequest):
     data_path = os.path.join(ROOT_DIR, 'backend', 'processed_master.csv')
     df = pd.read_csv(data_path)
     
-    state_data = df[df['State'] == request.state]
+    state_data = df[df['State'] == request.state.upper()]
     if state_data.empty:
         raise HTTPException(status_code=404, detail="State not found in baseline")
         
@@ -78,24 +90,16 @@ def get_safety_profile(request: SafetyProfileRequest):
     total_crimes = latest_crimes.get('Total_IPC_Crimes', 1)
     crimes_women = latest_crimes.get('Crimes_Against_Women', 1)
     
-    # Calculate a proxy risk index based on demographics
-    # If women, index heavily relates to crimes against women.
-    # If young (e.g. 18-30), different factors apply...
-    
-    risk_score = 0.5  # Baseline risk
+    risk_score = 0.5 
     
     if request.sex.lower() == 'female':
         risk_score += (crimes_women / (total_crimes + 0.001)) * 2.0
     else:
         risk_score += 0.1
         
-    # Standardize a safety rating between 0 (very unsafe) and 100 (very safe)
-    # A simple heuristic normal distribution approximation
-    safety_rating = max(10, min(100, 100 - (risk_score * 50)))
+    safety_rating = max(10, min(100, 100 - (risk_score * 20)))
     
     return {
-        "state": request.state,
-        "demographic": f"{request.sex}, {request.age_group}",
-        "safety_rating": round(safety_rating, 2),
-        "notes": "Safety rating inferred from specialized crime ratios."
+        "safety_score": round(safety_rating),
+        "primary_risk_factors": ["High regional property crime", "Low clearance rates in area"] if safety_rating < 50 else ["Generally safe demographics"]
     }

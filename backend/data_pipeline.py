@@ -3,115 +3,81 @@ import numpy as np
 import os
 import re
 
-# Base paths
 CRIME_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'crime')
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 
 def normalize_state_name(state: str) -> str:
-    """Normalize State/UT names to a standard format."""
-    if pd.isna(state):
-        return state
-    # General cleanup
+    if pd.isna(state): return state
     state = str(state).upper().strip()
-    state = re.sub(r'\s+', ' ', state) # remove multiple spaces
-    
+    state = re.sub(r'\s+', ' ', state) 
     mapping = {
-        'ORISSA': 'ODISHA',
-        'UTTARANCHAL': 'UTTARAKHAND',
-        'PONDICHERRY': 'PUDUCHERRY',
-        'A & N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS',
-        'D & N HAVELI': 'DADRA AND NAGAR HAVELI',
-        'A&N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS',
-        'D&N HAVELI': 'DADRA AND NAGAR HAVELI',
-        'DELHI UT': 'DELHI',
-        'JAMMU & KASHMIR': 'JAMMU AND KASHMIR'
+        'ORISSA': 'ODISHA', 'UTTARANCHAL': 'UTTARAKHAND', 'PONDICHERRY': 'PUDUCHERRY',
+        'A & N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS', 'D & N HAVELI': 'DADRA AND NAGAR HAVELI',
+        'A&N ISLANDS': 'ANDAMAN AND NICOBAR ISLANDS', 'D&N HAVELI': 'DADRA AND NAGAR HAVELI',
+        'DELHI UT': 'DELHI', 'JAMMU & KASHMIR': 'JAMMU AND KASHMIR'
     }
     return mapping.get(state, state)
 
 def load_and_standardize(file_path, area_cols, year_col='Year'):
-    """Load a CSV and standardize basic columns."""
-    if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
-        return pd.DataFrame()
-    
-    try:
-        df = pd.read_csv(file_path, engine='python', on_bad_lines='skip')
-    except Exception as e:
-        print(f"Error reading {file_path}: {e}")
-        return pd.DataFrame()
+    if not os.path.exists(file_path): return pd.DataFrame()
+    try: df = pd.read_csv(file_path, engine='python', on_bad_lines='skip')
+    except Exception: return pd.DataFrame()
         
-    # Standardize area column to 'State'
     for col in area_cols:
         if col in df.columns:
             df.rename(columns={col: 'State'}, inplace=True)
             break
             
-    if 'State' in df.columns:
-        df['State'] = df['State'].apply(normalize_state_name)
+    if 'State' in df.columns: df['State'] = df['State'].apply(normalize_state_name)
     
     for y_col in [year_col, 'YEAR', 'year']:
         if y_col in df.columns:
             df.rename(columns={y_col: 'Year'}, inplace=True)
             break
             
-    if 'Year' in df.columns:
-        # Convert year to numeric
-        try:
-            df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
-        except:
-            pass
-            
+    if 'Year' in df.columns: df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
     return df
 
 def build_data_pipeline():
     print("Extracting Enforcement Lever Data...")
-    df_police = load_and_standardize(
-        os.path.join(CRIME_DIR, '12_Police_strength_actual_and_sanctioned.csv'), 
-        ['Area_Name']
-    )
+    df_police = load_and_standardize(os.path.join(CRIME_DIR, '12_Police_strength_actual_and_sanctioned.csv'), ['Area_Name'])
     if not df_police.empty:
         df_police = df_police[df_police['Sub_Group_Name'].str.contains('Total', na=False, case=False) | df_police['Rank_All_Ranks_Total'].notna()]
-        # Aggregate to State/Year level
-        df_police = df_police.groupby(['State', 'Year']).agg({
-            'Rank_All_Ranks_Total': 'sum' # we can assume this acts as a proxy for strength
-        }).reset_index().rename(columns={'Rank_All_Ranks_Total': 'Police_Strength'})
+        df_police = df_police.groupby(['State', 'Year']).agg({'Rank_All_Ranks_Total': 'sum'}).reset_index().rename(columns={'Rank_All_Ranks_Total': 'Police_Strength'})
 
     print("Extracting Fiscal Lever Data...")
-    df_housing = load_and_standardize(
-        os.path.join(ROOT_DIR, '36_Police_housing.csv'),
-        ['Area_Name']
-    )
+    df_housing = load_and_standardize(os.path.join(CRIME_DIR, '36_Police_housing.csv'), ['Area_Name'])
     if not df_housing.empty:
-        df_housing = df_housing.groupby(['State', 'Year']).agg({
-            'PH_Sanctioned_Strength': 'sum'
-        }).reset_index().rename(columns={'PH_Sanctioned_Strength': 'Fiscal_Budget_Proxy'})
-
-    print("Extracting Social Lever Data...")
-    df_edu = load_and_standardize(
-        os.path.join(CRIME_DIR, '18_01_Juveniles_arrested_Education.csv'),
-        ['Area_Name']
-    )
-    if not df_edu.empty:
-        df_edu = df_edu.groupby(['State', 'Year']).agg({
-            'Education_Total': 'sum'
-        }).reset_index().rename(columns={'Education_Total': 'Juveniles_Arrested'})
+        df_housing = df_housing.groupby(['State', 'Year']).agg({'PH_Sanctioned_Strength': 'sum'}).reset_index().rename(columns={'PH_Sanctioned_Strength': 'Fiscal_Budget_Proxy'})
 
     print("Extracting Judicial Lever Data...")
-    df_trials = load_and_standardize(
-        os.path.join(ROOT_DIR, '29_Period_of_trials_by_courts.csv'),
-        ['Area_Name']
-    )
-    if not df_trials.empty:
-        # Number of trials over 10 years as a simple metric
-        if 'PT_Over_10_Years' in df_trials.columns:
-            df_trials = df_trials.groupby(['State', 'Year']).agg({
-                'PT_Over_10_Years': 'sum'
-            }).reset_index().rename(columns={'PT_Over_10_Years': 'Prolonged_Trials'})
+    df_trials = load_and_standardize(os.path.join(CRIME_DIR, '29_Period_of_trials_by_courts.csv'), ['Area_Name'])
+    if not df_trials.empty and 'PT_Over_10_Years' in df_trials.columns:
+        df_trials = df_trials.groupby(['State', 'Year']).agg({'PT_Over_10_Years': 'sum'}).reset_index().rename(columns={'PT_Over_10_Years': 'Prolonged_Trials'})
+
+    print("Extracting Socio-Economic Levers...")
+    df_edu = load_and_standardize(os.path.join(CRIME_DIR, '18_01_Juveniles_arrested_Education.csv'), ['Area_Name'])
+    if not df_edu.empty and 'Education_Total' in df_edu.columns:
+        df_edu = df_edu.groupby(['State', 'Year']).agg({'Education_Total': 'sum'}).reset_index().rename(columns={'Education_Total': 'Juveniles_Arrested'})
+
+    df_econ = load_and_standardize(os.path.join(CRIME_DIR, '18_02_Juveniles_arrested_Economic_setup.csv'), ['Area_Name'])
+    if not df_econ.empty and 'Low_Income' in df_econ.columns:
+        df_econ = df_econ.groupby(['State', 'Year']).agg({'Low_Income': 'sum'}).reset_index().rename(columns={'Low_Income': 'Juveniles_Low_Income'})
+    elif not df_econ.empty:
+        numeric_cols = df_econ.select_dtypes(include=[np.number]).columns.drop('Year', errors='ignore')
+        df_econ = df_econ.groupby(['State', 'Year'])[numeric_cols].sum().sum(axis=1).reset_index(name='Juveniles_Low_Income')
+
+    print("Extracting Recidivism Data...")
+    df_recidivism = load_and_standardize(os.path.join(CRIME_DIR, '22_Persons_arrested_under_recidivism.csv'), ['Area_Name'])
+    if not df_recidivism.empty:
+        past_conv_cols = [c for c in df_recidivism.columns if 'convicted' in str(c).lower() or 'past' in str(c).lower()]
+        if past_conv_cols:
+            df_recidivism = df_recidivism.groupby(['State', 'Year']).agg({past_conv_cols[0]: 'sum'}).reset_index().rename(columns={past_conv_cols[0]: 'Repeat_Offenders'})
         else:
-            df_trials = pd.DataFrame(columns=['State', 'Year', 'Prolonged_Trials'])
+            numeric_cols = df_recidivism.select_dtypes(include=[np.number]).columns.drop('Year', errors='ignore')
+            df_recidivism = df_recidivism.groupby(['State', 'Year'])[numeric_cols].sum().sum(axis=1).reset_index(name='Repeat_Offenders')
 
     print("Extracting Targets Data (Crimes)...")
-    # Combining the IPC crimes (2001-2012, 2013, 2014) target variables
     targets = []
     for file_name in [
         '01_District_wise_crimes_committed_IPC_2001_2012.csv',
@@ -120,72 +86,48 @@ def build_data_pipeline():
     ]:
         df_t = load_and_standardize(os.path.join(CRIME_DIR, file_name), ['STATE/UT', 'States/UTs', 'Area_Name'])
         if not df_t.empty:
-            targets.append(df_t)
+            col_total = [c for c in df_t.columns if 'Total Cognizable IPC crimes' in c or 'TOTAL IPC CRIMES' in c.upper()]
+            col_women = [c for c in df_t.columns if c.strip().upper() == 'RAPE']
+            col_prop = [c for c in df_t.columns if c.strip().upper() == 'THEFT']
             
+            rename_map = {}
+            if col_total: rename_map[col_total[0]] = 'Total_IPC_Crimes'
+            if col_women: rename_map[col_women[0]] = 'Crimes_Against_Women'
+            if col_prop: rename_map[col_prop[0]] = 'Property_Stolen'
+            
+            df_t.rename(columns=rename_map, inplace=True)
+            if all(col in df_t.columns for col in ['State', 'Year', 'Total_IPC_Crimes', 'Crimes_Against_Women', 'Property_Stolen']):
+                df_t = df_t[['State', 'Year', 'Total_IPC_Crimes', 'Crimes_Against_Women', 'Property_Stolen']]
+                targets.append(df_t)
+            
+    df_targets_agg = pd.DataFrame()
     if targets:
         df_targets = pd.concat(targets, ignore_index=True)
-        # We need Total IPC, Crimes Against Women, Property Stolen
-        # 1. Total IPC
-        col_total = [c for c in df_targets.columns if 'Total Cognizable IPC crimes' in c or 'TOTAL IPC CRIMES' in c.upper()]
-        total_col = col_total[0] if col_total else None
-        
-        # 2. Crimes Against Women -> we use Rape as proxy or if there's a aggregate field
-        col_women = [c for c in df_targets.columns if 'Rape' in c or 'Rape_Total' in c]
-        women_col = col_women[0] if col_women else None
-        
-        # 3. Property (Theft, Auto Theft)
-        col_prop = [c for c in df_targets.columns if 'Theft' in c or 'Auto Theft' in c]
-        prop_col = col_prop[0] if col_prop else None
-
-        agg_dict = {}
-        if total_col: agg_dict[total_col] = 'sum'
-        if women_col: agg_dict[women_col] = 'sum'
-        if prop_col: agg_dict[prop_col] = 'sum'
-        
-        df_targets_agg = df_targets.groupby(['State', 'Year']).agg(agg_dict).reset_index()
-        # Rename them properly
-        rename_map = {}
-        if total_col: rename_map[total_col] = 'Total_IPC_Crimes'
-        if women_col: rename_map[women_col] = 'Crimes_Against_Women'
-        if prop_col: rename_map[prop_col] = 'Property_Stolen'
-        df_targets_agg.rename(columns=rename_map, inplace=True)
-    else:
-        df_targets_agg = pd.DataFrame(columns=['State', 'Year', 'Total_IPC_Crimes', 'Crimes_Against_Women', 'Property_Stolen'])
+        df_targets_agg = df_targets.groupby(['State', 'Year']).sum().reset_index()
 
     print("Merging DataFrames...")
-    # Initialize master
-    master = pd.DataFrame()
-    dfs = [df_police, df_housing, df_edu, df_trials, df_targets_agg]
-    dfs = [d for d in dfs if not d.empty]
+    dfs = [df_police, df_housing, df_trials, df_edu, df_econ, df_recidivism, df_targets_agg]
+    dfs = [d for d in dfs if not d.empty and 'State' in d.columns]
     
     if dfs:
         master = dfs[0]
         for idx in range(1, len(dfs)):
             master = pd.merge(master, dfs[idx], on=['State', 'Year'], how='outer')
             
-    # Forward-fill / state-median imputation for missing data
-    print("Performing Imputation...")
-    # First, sort to ensure chronologically filling
-    if not master.empty and 'Year' in master.columns:
+        print("Performing Imputation & Feature Engineering...")
         master = master.sort_values(by=['State', 'Year'])
         states = master['State']
-        master = master.groupby('State').ffill().bfill() # ffill then bfill for remaining
-        master['State'] = states
         
-        # Any totally empty column per state, fill with global median
-        for col in master.columns:
-            if col not in ['State', 'Year']:
-                if master[col].dtype == object:
-                    # Attempt to convert to numeric if it happens to be string
-                    master[col] = pd.to_numeric(master[col], errors='coerce')
-                master[col] = master[col].fillna(master[col].median())
-                master[col] = master[col].fillna(0) # Ultimate fallback
+        # Replace deprecated ffill/bfill with ffill() and bfill() methods
+        master = master.groupby('State').apply(lambda group: group.ffill().bfill()).reset_index(drop=True)
+        
+        master['State'] = states
+        master.fillna(0, inplace=True)
 
         out_path = os.path.join(ROOT_DIR, 'backend', 'processed_master.csv')
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
         master.to_csv(out_path, index=False)
         print(f"Saved processed_master.csv to {out_path}")
-    else:
-        print("Master DataFrame is empty, nothing to save.")
 
 if __name__ == '__main__':
     build_data_pipeline()
