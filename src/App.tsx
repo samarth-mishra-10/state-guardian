@@ -75,15 +75,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-[1600px] px-4 pb-6 pt-4 sm:px-6 lg:px-8">
-        <header className="mb-5 rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900/70 p-5 shadow-[0_0_80px_-40px_rgba(59,130,246,0.7)]">
+      <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-3 pb-3 pt-3 sm:px-5 lg:px-6">
+        <header className="mb-3 rounded-2xl border border-slate-800/80 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900/70 p-4 shadow-[0_0_80px_-40px_rgba(59,130,246,0.7)]">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="h-6 w-6 text-blue-400" />
-                <h1 className="text-2xl font-bold tracking-tight">State Guardian</h1>
+                <h1 className="text-xl font-bold tracking-tight md:text-2xl">Sentinel</h1>
               </div>
-              <p className="text-sm text-slate-300">
+              <p className="text-xs text-slate-300 md:text-sm">
                 Plan data-backed public safety scenarios with state-specific projections and actionable insights.
               </p>
             </div>
@@ -112,8 +112,8 @@ export default function App() {
           </div>
         )}
 
-        <main className="grid items-start gap-5 xl:grid-cols-12">
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.7)] md:p-5 xl:col-span-3 xl:sticky xl:top-4">
+        <main className="grid flex-1 gap-3 xl:grid-cols-12">
+          <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.7)] md:p-4 xl:col-span-3 xl:max-h-[calc(100vh-7.5rem)]">
             <ResourcePanel
               targetYear={targetYear}
               setTargetYear={setTargetYear}
@@ -126,11 +126,11 @@ export default function App() {
             />
           </section>
 
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.45)] md:p-5 xl:col-span-4">
-            <div className="mb-3 flex items-center justify-between">
+          <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.45)] md:p-4 xl:col-span-4 xl:max-h-[calc(100vh-7.5rem)]">
+            <div className="mb-2 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Pick a State</h2>
-                <p className="text-sm text-slate-400">
+                <h2 className="text-base font-semibold md:text-lg">Pick a State</h2>
+                <p className="text-xs text-slate-400 md:text-sm">
                   Select any region and run a custom policy scenario.
                 </p>
               </div>
@@ -139,16 +139,16 @@ export default function App() {
                 Interactive map
               </span>
             </div>
-            <div className="h-[420px] md:h-[520px]">
+            <div className="min-h-0 flex-1">
               <IndiaMap selectedState={selectedState} onSelectState={setSelectedState} />
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.45)] md:p-5 xl:col-span-5">
+          <section className="overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-3 shadow-[0_20px_80px_-60px_rgba(59,130,246,0.45)] md:p-4 xl:col-span-5 xl:max-h-[calc(100vh-7.5rem)]">
             <AnalyticsPanel state={selectedState} results={results} loading={loading} />
           </section>
         </main>
-        <div className="mt-5 text-center text-xs text-slate-500">
+        <div className="mt-2 text-center text-[11px] text-slate-500">
           Tip: tweak 1-2 levers at a time to understand causal impact clearly.
         </div>
       </div>

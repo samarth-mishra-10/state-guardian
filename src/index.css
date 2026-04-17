@@ -65,9 +65,17 @@
     @apply border-border;
   }
 
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-display);
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 }
 
@@ -151,7 +159,7 @@
       rgba(59, 130, 246, 0.28) 100%
     );
   outline: none;
-  transition: box-shadow 0.15s ease;
+  transition: box-shadow 0.15s ease, filter 0.2s ease;
 }
 
 .policy-slider:hover {
@@ -172,6 +180,7 @@
   border: 2px solid #2563eb;
   box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .policy-slider::-moz-range-thumb {
@@ -182,4 +191,15 @@
   border: 2px solid #2563eb;
   box-shadow: 0 4px 18px rgba(37, 99, 235, 0.45);
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.policy-slider:active::-webkit-slider-thumb {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+}
+
+.policy-slider:active::-moz-range-thumb {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
 }

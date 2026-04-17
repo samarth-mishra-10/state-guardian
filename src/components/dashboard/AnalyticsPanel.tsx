@@ -78,10 +78,10 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
     const { diff, pct, isIncrease } = getDelta(base, sim);
 
     return (
-      <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-4">
-        <h4 className="text-sm text-slate-400 mb-1">{title}</h4>
-        <div className="text-2xl font-bold font-mono text-slate-100">{formatNumber(sim)}</div>
-        <div className={`flex items-center gap-1 text-sm mt-2 ${isIncrease ? 'text-red-400' : 'text-emerald-400'}`}>
+      <div className="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
+        <h4 className="mb-1 text-xs text-slate-400 md:text-sm">{title}</h4>
+        <div className="font-mono text-xl font-bold text-slate-100 md:text-2xl">{formatNumber(sim)}</div>
+        <div className={`mt-2 flex items-center gap-1 text-xs md:text-sm ${isIncrease ? 'text-red-400' : 'text-emerald-400'}`}>
           {isIncrease ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
           <span>{isIncrease ? '+' : ''}{formatNumber(diff)} ({pct > 0 ? '+' : ''}{pct.toFixed(1)}%)</span>
         </div>
@@ -90,24 +90,24 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="mb-5 flex justify-between">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="mb-3 flex justify-between">
         <div>
-          <h2 className="text-xl font-bold">Impact Analytics</h2>
-          <p className="text-sm text-slate-400">
+          <h2 className="text-lg font-bold md:text-xl">Impact Analytics</h2>
+          <p className="text-xs text-slate-400 md:text-sm">
             Region: <span className="font-semibold text-blue-400">{stateLabel}</span>
           </p>
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
         <MetricCard title="Total IPC Crimes" keyName="Total_IPC_Crimes" />
         <MetricCard title="Crimes Against Women" keyName="Crimes_Against_Women" />
         <MetricCard title="Property Stolen" keyName="Property_Stolen" />
       </div>
 
-      <div className="mb-6 h-[280px] md:h-[320px]">
-        <h3 className="mb-3 text-sm font-medium text-slate-400">Baseline vs. Policy Simulation</h3>
+      <div className="mb-3 h-[220px] md:h-[240px]">
+        <h3 className="mb-2 text-xs font-medium text-slate-400 md:text-sm">Baseline vs. Policy Simulation</h3>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -124,12 +124,12 @@ export default function AnalyticsPanel({ state, results, loading }: AnalyticsPan
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-auto rounded-lg border border-slate-700 bg-slate-900 p-4">
+      <div className="mt-auto rounded-lg border border-slate-700 bg-slate-900 p-3">
         <div className="mb-2 flex items-center gap-2 text-blue-300">
           <Lightbulb className="h-4 w-4" />
           <h4 className="text-sm font-semibold">Scenario Insights</h4>
         </div>
-        <ul className="list-disc space-y-2 pl-4 text-xs text-slate-300">
+        <ul className="list-disc space-y-1.5 pl-4 text-[11px] text-slate-300 md:text-xs">
           {insights.map((insight) => (
             <li key={insight}>{insight}</li>
           ))}
