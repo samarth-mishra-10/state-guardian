@@ -6,6 +6,7 @@ interface ResourcePanelProps {
   setTargetYear: (year: number) => void;
   levers: Record<string, number>;
   setLevers: React.Dispatch<React.SetStateAction<Record<string, number>>>;
+  baselines: Record<string, number> | null;
   onSimulate: () => void;
   onReset: () => void;
   loading: boolean;
@@ -17,13 +18,13 @@ export default function ResourcePanel({
   setTargetYear,
   levers,
   setLevers,
+  baselines,
   onSimulate,
   onReset,
   loading,
   hasLeverChanges,
 }: ResourcePanelProps) {
   const handleLeverChange = (key: string, value: number) => {
-    // Optional: Add clamping logic here to ensure typed values don't exceed min/max bounds
     setLevers((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -64,61 +65,70 @@ export default function ResourcePanel({
     </div>
   );
 
-  const LeverSlider = ({ id, label, min, max }: { id: string; label: string; min: number; max: number }) => (
-    <div className="group rounded-lg border border-transparent p-1 transition-all hover:border-slate-800/60 hover:bg-slate-900/30">
-      <div className="mb-2 flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
-          <label className="text-slate-300">{label}</label>
-          {levers[id] !== 0 && (
-            <button
-              onClick={() => handleLeverChange(id, 0)}
-              className="text-slate-500 opacity-0 transition-all hover:text-slate-300 group-hover:opacity-100"
-              title="Reset to Neutral"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          )}
+  const LeverSlider = ({ id, label, min, max }: { id: string; label: string; min: number; max: number }) => {
+    const baseVal = baselines ? baselines[id] : undefined;
+
+    return (
+      <div className="group rounded-lg border border-transparent p-1 transition-all hover:border-slate-800/60 hover:bg-slate-900/30">
+        <div className="mb-2 flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <label className="text-slate-300">{label}</label>
+            {baseVal !== undefined && (
+              <span className="inline-flex items-center rounded bg-slate-800/60 px-1.5 py-0.5 text-[10px] font-medium text-slate-400">
+                Base: {Math.round(baseVal).toLocaleString()}
+              </span>
+            )}
+            {levers[id] !== 0 && (
+              <button
+                onClick={() => handleLeverChange(id, 0)}
+                className="text-slate-500 opacity-0 transition-all hover:text-slate-300 group-hover:opacity-100"
+                title="Reset to Neutral"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={min}
+              max={max}
+              value={levers[id] === 0 ? '' : levers[id]}
+              placeholder="0"
+              onChange={(e) => handleLeverChange(id, Number(e.target.value) || 0)}
+              className={`w-14 rounded-md border border-slate-700 bg-slate-950/50 px-1 py-0.5 text-right font-mono text-sm outline-none transition-colors focus:border-blue-500 focus:bg-slate-900 ${
+                levers[id] === 0 ? 'text-slate-500' : levers[id] > 0 ? 'text-emerald-300' : 'text-amber-300'
+              }`}
+            />
+            <span className="text-slate-500">%</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <input
-            type="number"
-            min={min}
-            max={max}
-            value={levers[id] === 0 ? '' : levers[id]}
-            placeholder="0"
-            onChange={(e) => handleLeverChange(id, Number(e.target.value) || 0)}
-            className={`w-14 rounded-md border border-slate-700 bg-slate-950/50 px-1 py-0.5 text-right font-mono text-sm outline-none transition-colors focus:border-blue-500 focus:bg-slate-900 ${
-              levers[id] === 0 ? 'text-slate-500' : levers[id] > 0 ? 'text-emerald-300' : 'text-amber-300'
-            }`}
-          />
-          <span className="text-slate-500">%</span>
+        
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step="1"
+          value={levers[id]}
+          onChange={(e) => handleLeverChange(id, Number(e.target.value))}
+          style={getSliderBackground(levers[id], min, max)}
+          className="policy-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-800 outline-none transition-opacity hover:opacity-90"
+        />
+        
+        <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-500">
+          <button onClick={() => handleLeverChange(id, min)} className="hover:text-amber-400 transition-colors">
+            {min}%
+          </button>
+          <button onClick={() => handleLeverChange(id, 0)} className="hover:text-slate-300 transition-colors">
+            Neutral
+          </button>
+          <button onClick={() => handleLeverChange(id, max)} className="hover:text-blue-400 transition-colors">
+            +{max}%
+          </button>
         </div>
       </div>
-      
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step="1"
-        value={levers[id]}
-        onChange={(e) => handleLeverChange(id, Number(e.target.value))}
-        style={getSliderBackground(levers[id], min, max)}
-        className="policy-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-800 outline-none transition-opacity hover:opacity-90"
-      />
-      
-      <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-500">
-        <button onClick={() => handleLeverChange(id, min)} className="hover:text-amber-400 transition-colors">
-          {min}%
-        </button>
-        <button onClick={() => handleLeverChange(id, 0)} className="hover:text-slate-300 transition-colors">
-          Neutral
-        </button>
-        <button onClick={() => handleLeverChange(id, max)} className="hover:text-blue-400 transition-colors">
-          +{max}%
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex h-full flex-col">

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import ResourcePanel from './components/dashboard/ResourcePanel';
 import IndiaMap from './components/dashboard/IndiaMap';
 import AnalyticsPanel from './components/dashboard/AnalyticsPanel';
@@ -24,6 +24,7 @@ export default function App() {
   });
   
   const [results, setResults] = useState<SimulationResults | null>(null);
+  const [baselines, setBaselines] = useState<Record<string, number> | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -31,6 +32,30 @@ export default function App() {
     () => Object.values(levers).some((value) => value !== 0),
     [levers]
   );
+
+  // Automatically fetch baseline metrics when the state changes
+  useEffect(() => {
+    const fetchBaselines = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            state: selectedState,
+            target_year: 2014, // Year doesn't matter for fetching historical baselines
+            lever_changes: {}, // 0 changes to get pure baseline
+          }),
+        });
+        const data = await response.json();
+        if (response.ok && data.baseline_features) {
+          setBaselines(data.baseline_features);
+        }
+      } catch (error) {
+        console.error('Failed to fetch baseline data:', error);
+      }
+    };
+    fetchBaselines();
+  }, [selectedState]);
 
   const runSimulation = async () => {
     setLoading(true);
@@ -119,6 +144,7 @@ export default function App() {
               setTargetYear={setTargetYear}
               levers={levers}
               setLevers={setLevers}
+              baselines={baselines}
               onSimulate={runSimulation}
               onReset={resetScenario}
               loading={loading}
